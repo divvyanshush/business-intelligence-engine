@@ -17,12 +17,10 @@ RULES:
 - Scores must be honest — most ideas score 45-70, not 80+
 - Decision must be decisive: GO means strong conviction, PIVOT means specific change needed, NO-GO means structural problem
 
-Return ONLY a valid JSON object. No markdown. No backticks. No explanation. Just the raw JSON.
+CRITICAL: Return ONLY a valid JSON object. No markdown. No backticks. No explanation. No trailing commas. All keys must be double-quoted. Just raw valid JSON.
 
 JSON structure:
-{"decision":"GO — one line reason","decisionClass":"v-go","dtc":"go-t","dbc":"go-b","decisionReason":"3 sentences with specific insight, numbers, and the key insight a founder needs to hear","metrics":[{"l":"Year-1 revenue","v":"$X","s":"basis for estimate"},{"l":"Gross margin","v":"X%","s":"after COGS breakdown"},{"l":"Launch capital","v":"$X","s":"what it covers"},{"l":"Payback period","v":"X months","s":"at target CAC"}],"scores":{"marketSize":0,"differentiation":0,"marginQuality":0,"capitalEfficiency":0,"executionComplexity":0,"scalability":0},"gaps":["Specific gap with evidence — e.g. 38% of Amazon reviews in this category cite X as top complaint, no brand has solved it","Second specific gap with data","Third gap tied to demographic or behavioral shift","Fourth gap — distribution or channel white space"],"competitors":[{"name":"Real company name","share":30,"weakness":"Specific exploitable weakness","threat":"high"},{"name":"Real company","share":25,"weakness":"specific weakness","threat":"med"},{"name":"Real company","share":20,"weakness":"specific weakness","threat":"med"},{"name":"Real company","share":15,"weakness":"specific weakness","threat":"low"},{"name":"Long tail / others","share":10,"weakness":"fragmented, no brand","threat":"low"}],"personas":[{"name":"Descriptive persona name","tag":"Primary — X% of revenue","age":"28-42","channels":"Specific platforms","pain":"Specific pain with context","trigger":"Exact psychological or situational trigger for purchase"},{"name":"Persona 2","tag":"Secondary","age":"30-50","channels":"platforms","pain":"pain","trigger":"trigger"},{"name":"Persona 3","tag":"Tertiary","age":"35-55","channels":"platforms","pain":"pain","trigger":"trigger"}],"channels":[{"name":"Channel name","cac":"$X-Y","fit":"Primary","note":"Specific tactic, keyword, or audience detail"},{"name":"Channel","cac":"$X-Y","fit":"High","note":"specific note"},{"name":"Channel","cac":"$X-Y","fit":"Medium","note":"specific note"},{"name":"Channel","cac":"$X-Y","fit":"High","note":"specific note"},{"name":"Channel","cac":"$X-Y","fit":"Medium","note":"specific note"}],"legal":["Specific legal requirement for this exact business type","IP or patent consideration","Compliance or certification needed","Entity and contract recommendation"],"exit":{"yr3Rev":"$XM ARR or revenue","multiple":"X-Yx revenue/ARR","yr3Val":"$XM-$YM","buyers":"Specific named acquirers who have bought in this category"},"risks":[{"r":"Specific risk","m":"Specific mitigation"}],"roadmap":[["Weeks 1-4","Specific action with measurable output"],["Weeks 5-8","action"],["Weeks 9-12","action"],["Month 4","action"],["Month 5-6","action"],["Month 7-9","action"],["Month 10-12","action"]],"spec":[["Product/service","Specific description"],["Core differentiator","The one thing competitors don't have"],["Price point","$X — positioning rationale"],["Unit economics","COGS $X, price $Y, margin Z%"],["MOQ or minimum","X units or $X"],["Launch market","Specific geography or segment to start"],["Scale path","How this grows beyond launch"]],"forecastBars":[{"label":"Month 1","val":"X units/customers","pct":5},{"label":"Month 3","val":"X units","pct":20},{"label":"Month 6","val":"X units","pct":50},{"label":"Month 12","val":"X units","pct":100}]}
-
-For risks, use this format: [{"r":"risk description","m":"mitigation"}] — an array of objects with r and m fields.`;
+{"decision":"GO — one line reason","decisionClass":"v-go","dtc":"go-t","dbc":"go-b","decisionReason":"3 sentences with specific insight, numbers, and the key insight a founder needs to hear","metrics":[{"l":"Year-1 revenue","v":"$X","s":"basis for estimate"},{"l":"Gross margin","v":"X%","s":"after COGS breakdown"},{"l":"Launch capital","v":"$X","s":"what it covers"},{"l":"Payback period","v":"X months","s":"at target CAC"}],"scores":{"marketSize":0,"differentiation":0,"marginQuality":0,"capitalEfficiency":0,"executionComplexity":0,"scalability":0},"gaps":["Specific gap with evidence","Second specific gap with data","Third gap tied to demographic or behavioral shift","Fourth gap — distribution or channel white space"],"competitors":[{"name":"Real company name","share":30,"weakness":"Specific exploitable weakness","threat":"high"},{"name":"Real company","share":25,"weakness":"specific weakness","threat":"med"},{"name":"Real company","share":20,"weakness":"specific weakness","threat":"med"},{"name":"Real company","share":15,"weakness":"specific weakness","threat":"low"},{"name":"Long tail / others","share":10,"weakness":"fragmented, no brand","threat":"low"}],"personas":[{"name":"Descriptive persona name","tag":"Primary — X% of revenue","age":"28-42","channels":"Specific platforms","pain":"Specific pain with context","trigger":"Exact psychological or situational trigger for purchase"},{"name":"Persona 2","tag":"Secondary","age":"30-50","channels":"platforms","pain":"pain","trigger":"trigger"},{"name":"Persona 3","tag":"Tertiary","age":"35-55","channels":"platforms","pain":"pain","trigger":"trigger"}],"channels":[{"name":"Channel name","cac":"$X-Y","fit":"Primary","note":"Specific tactic or audience detail"},{"name":"Channel","cac":"$X-Y","fit":"High","note":"specific note"},{"name":"Channel","cac":"$X-Y","fit":"Medium","note":"specific note"},{"name":"Channel","cac":"$X-Y","fit":"High","note":"specific note"},{"name":"Channel","cac":"$X-Y","fit":"Medium","note":"specific note"}],"legal":["Specific legal requirement for this exact business type","IP or patent consideration","Compliance or certification needed","Entity and contract recommendation"],"exit":{"yr3Rev":"$XM ARR or revenue","multiple":"X-Yx revenue/ARR","yr3Val":"$XM-$YM","buyers":"Specific named acquirers who have bought in this category"},"risks":[{"r":"Specific risk","m":"Specific mitigation"},{"r":"risk","m":"mitigation"},{"r":"risk","m":"mitigation"},{"r":"risk","m":"mitigation"},{"r":"risk","m":"mitigation"}],"roadmap":[["Weeks 1-4","Specific action with measurable output"],["Weeks 5-8","action"],["Weeks 9-12","action"],["Month 4","action"],["Month 5-6","action"],["Month 7-9","action"],["Month 10-12","action"]],"spec":[["Product/service","Specific description"],["Core differentiator","The one thing competitors do not have"],["Price point","$X — positioning rationale"],["Unit economics","COGS $X, price $Y, margin Z%"],["MOQ or minimum","X units or $X"],["Launch market","Specific geography or segment to start"],["Scale path","How this grows beyond launch"]],"forecastBars":[{"label":"Month 1","val":"X units/customers","pct":5},{"label":"Month 3","val":"X units","pct":20},{"label":"Month 6","val":"X units","pct":50},{"label":"Month 12","val":"X units","pct":100}]}`;
 
   try {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -35,9 +33,9 @@ For risks, use this format: [{"r":"risk description","m":"mitigation"}] — an a
         model: 'llama-3.3-70b-versatile',
         messages: [
           { role: 'system', content: SYSTEM },
-          { role: 'user', content: `Analyze this business idea with deep specificity. Be a honest, experienced VC partner — not a cheerleader. Business idea: "${idea.trim()}"` }
+          { role: 'user', content: `Analyze this business idea. Be brutally honest. Return only valid JSON with no trailing commas and all keys double-quoted. Business idea: "${idea.trim()}"` }
         ],
-        temperature: 0.4,
+        temperature: 0.3,
         max_tokens: 4000,
       }),
     });
@@ -48,19 +46,26 @@ For risks, use this format: [{"r":"risk description","m":"mitigation"}] — an a
     let text = data.choices[0].message.content.trim();
 
     // Strip markdown fences
-    text = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+    text = text.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
 
-    // Extract JSON object
+    // Extract JSON object boundaries
     const start = text.indexOf('{');
     const end = text.lastIndexOf('}');
-    if (start === -1 || end === -1) throw new Error('No JSON found in response');
+    if (start === -1 || end === -1) throw new Error('No JSON object found in response');
     text = text.slice(start, end + 1);
+
+    // Fix common AI JSON mistakes
+    text = text
+      .replace(/,(\s*[}\]])/g, '$1')           // trailing commas
+      .replace(/([{,]\s*)(\w+)(\s*:)/g, '$1"$2"$3'); // unquoted keys
 
     const parsed = JSON.parse(text);
 
     // Normalize risks — handle both string[] and {r,m}[] formats
     if (parsed.risks && Array.isArray(parsed.risks)) {
-      parsed.risks = parsed.risks.map(r => typeof r === 'string' ? r : `${r.r} — ${r.m}`);
+      parsed.risks = parsed.risks.map(r =>
+        typeof r === 'string' ? { r, m: '' } : r
+      );
     }
 
     return res.status(200).json(parsed);
