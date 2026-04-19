@@ -1,546 +1,439 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
-import Head from 'next/head'
-import { useRouter } from 'next/router'
-import dynamic from 'next/dynamic'
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/router';
+import RadarChart from '../components/RadarChart';
 
-const RadarChart = dynamic(() => import('../components/RadarChart'), { ssr: false })
+const IDEA_POOL = [
+  'AI SaaS tool', 'D2C skincare brand', 'B2B data API', 'Micro-SaaS for creators',
+  'Newsletter business', 'Productized design service', 'AI hiring tool', 'No-code app builder',
+  'Marketplace for freelancers', 'EdTech for India', 'FinTech for SMBs', 'Health tracking app',
+  'AI legal assistant', 'Creator monetization tool', 'B2B cold outreach tool', 'E-commerce aggregator'
+];
 
-const PHASE_LOGS = [
-  { tag: 'IDEA', cls: 'tag-idea', lines: ['Parsing business idea into category taxonomy...', 'Mapping sub-markets and buyer intent clusters...', 'Estimating price bands and purchase frequency...'] },
-  { tag: 'DEMAND', cls: 'tag-demand', lines: ['Scanning search volume and trend data...', 'Checking marketplace unit velocity and YoY growth...', 'Assessing seasonality and saturation level...'] },
-  { tag: 'PROFIT', cls: 'tag-profit', lines: ['Analyzing price distribution across competitors...', 'Modeling fee structures, COGS, and channel costs...', 'Identifying margin compression dynamics...'] },
-  { tag: 'GAP', cls: 'tag-gap', lines: ['Mining customer reviews and social complaints...', 'Clustering pain points by frequency × severity...', 'Ranking differentiation vectors by defensibility...'] },
-  { tag: 'SUPPLY', cls: 'tag-supply', lines: ['Reverse-engineering BOM and cost structure...', 'Matching supplier profiles to required spec...', 'Estimating landed cost and MOQ capital needs...'] },
-  { tag: 'SALES', cls: 'tag-sales', lines: ['Modeling revenue and unit forecast curves...', 'Running review velocity and ranking analysis...', 'Calculating Year-1 projections with confidence interval...'] },
-  { tag: 'COMP', cls: 'tag-comp', lines: ['Identifying top 5 competitors by market share...', 'Analyzing weaknesses and threat levels...', 'Mapping white space in competitive landscape...'] },
-  { tag: 'PERSONA', cls: 'tag-persona', lines: ['Building buyer personas from demographic + behavioral data...', 'Mapping pain points to purchase triggers...', 'Identifying channels and messaging angles per persona...'] },
-  { tag: 'CHANNEL', cls: 'tag-channel', lines: ['Scoring acquisition channels by CAC and fit...', 'Recommending launch vs scale channel sequencing...', 'Flagging channel risks and dependencies...'] },
-  { tag: 'LEGAL', cls: 'tag-legal', lines: ['Checking licensing and registration requirements...', 'Flagging IP, compliance, and certification needs...', 'Identifying legal risks before capital deployment...'] },
-  { tag: 'EXIT', cls: 'tag-exit', lines: ['Projecting Year-3 revenue and EBITDA...', 'Modeling valuation at 2–5x revenue multiples...', 'Identifying likely acquirers and exit paths...'] },
-  { tag: 'SCORE', cls: 'tag-go', lines: ['Scoring across 6 dimensions: market, margin, differentiation...', 'Calculating overall opportunity score...', 'Calibrating decision confidence level...'] },
-  { tag: 'PLAN', cls: 'tag-plan', lines: ['Generating execution-ready product spec...', 'Building week-by-week launch roadmap...', 'Blueprint ready.'] },
-]
+const AGENTS = [
+  { name: 'Demand analysis',      status: 'scanning search trends' },
+  { name: 'Margin model',         status: 'estimating unit economics' },
+  { name: 'Market gap scan',      status: 'finding whitespace' },
+  { name: 'Competitor landscape', status: 'mapping players' },
+  { name: 'Buyer personas',       status: 'profiling segments' },
+  { name: 'Acquisition channels', status: 'scoring CAC' },
+  { name: 'Legal requirements',   status: 'checking compliance' },
+  { name: 'Exit potential',       status: 'valuing multiples' },
+  { name: 'Opportunity score',    status: 'finalising verdict' },
+];
 
-const QUICK_STARTS = [
-  'Water bottle brand with a modular design',
-  'Premium coffee subscription box',
-  'SaaS tool for freelance invoice management',
-  'Fitness apparel brand for women over 40',
-  'Meal-prep delivery service',
-  'Handmade soy candles on Etsy',
-  'Sustainable kids clothing brand',
-  'Mobile pet grooming van business',
-]
+const KIRA_LINES = [
+  'Give me a moment. Looking at the market...',
+  'Interesting space. Pulling competitor data...',
+  'Running the numbers...',
+  'Almost there. Scoring the opportunity...',
+  "Here's what I found.",
+];
 
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
+const TABS = ['Overview', 'Score', 'Market', 'Personas', 'Channels', 'Legal', 'Blueprint'];
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export default function Home() {
-  const router = useRouter()
-  const [idea, setIdea] = useState('')
-  const [phase, setPhase] = useState('input') // input | running | results | error
-  const [logs, setLogs] = useState([])
-  const [activePhase, setActivePhase] = useState(-1)
-  const [donePhases, setDonePhases] = useState([])
-  const [reportData, setReportData] = useState(null)
-  const [activeTab, setActiveTab] = useState('overview')
-  const [currentIdea, setCurrentIdea] = useState('')
-  const [error, setError] = useState('')
-  const [forecastAnimated, setForecastAnimated] = useState(false)
-  const [compAnimated, setCompAnimated] = useState(false)
-  const logRef = useRef(null)
-  const abortRef = useRef(null)
+  const router = useRouter();
 
-  // Load from URL on mount
+  // phases: input | running | results | error
+  const [phase, setPhase] = useState('input');
+  const [idea, setIdea] = useState('');
+  const [chips, setChips] = useState(IDEA_POOL.slice(0, 4));
+  const [spinning, setSpinning] = useState(false);
+  const [versionOpen, setVersionOpen] = useState(false);
+  const [version, setVersion] = useState('Kira 1.0');
+
+  const [agentStates, setAgentStates] = useState(AGENTS.map(() => 'pending')); // pending | running | done
+  const [kiraLine, setKiraLine] = useState('');
+
+  const [report, setReport] = useState(null);
+  const [activeTab, setActiveTab] = useState('Overview');
+  const [error, setError] = useState('');
+
+  const textareaRef = useRef(null);
+
+  // Restore from URL share
   useEffect(() => {
-    if (router.isReady) {
-      const { idea: urlIdea, data: urlData } = router.query
-      if (urlIdea && urlData) {
-        try {
-          const decoded = JSON.parse(decodeURIComponent(atob(urlData)))
-          setCurrentIdea(decodeURIComponent(urlIdea))
-          setReportData(decoded)
-          setPhase('results')
-        } catch (e) {
-          // ignore bad URL data
-        }
-      }
+    const { idea: qi, data: qd } = router.query;
+    if (qi && qd) {
+      try {
+        const restored = JSON.parse(decodeURIComponent(atob(qd)));
+        setIdea(decodeURIComponent(qi));
+        setReport(restored);
+        setPhase('results');
+      } catch {}
     }
-  }, [router.isReady])
+  }, [router.query]);
 
-  const addLog = useCallback((tag, cls, text) => {
-    setLogs(prev => [...prev, { tag, cls, text, id: Date.now() + Math.random() }])
-    setTimeout(() => {
-      if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
-    }, 50)
-  }, [])
+  // Shuffle chips
+  const shuffle = () => {
+    setSpinning(true);
+    setTimeout(() => setSpinning(false), 400);
+    const pool = [...IDEA_POOL].sort(() => Math.random() - 0.5).slice(0, 4);
+    setChips(pool);
+  };
 
-  const runAnalysis = async (ideaText) => {
-    setCurrentIdea(ideaText)
-    setPhase('running')
-    setLogs([])
-    setActivePhase(0)
-    setDonePhases([])
-    setError('')
+  // Submit
+  const submit = async () => {
+    if (!idea.trim()) return;
+    setPhase('running');
+    setAgentStates(AGENTS.map(() => 'pending'));
+    setKiraLine('');
+    setError('');
 
-    // Start log animation in parallel with API call
-    const logPromise = (async () => {
-      for (let i = 0; i < PHASE_LOGS.length; i++) {
-        setActivePhase(i)
-        for (const line of PHASE_LOGS[i].lines) {
-          addLog(PHASE_LOGS[i].tag, PHASE_LOGS[i].cls, line)
-          await sleep(300)
-        }
-        setDonePhases(prev => [...prev, i])
-        await sleep(100)
-      }
-    })()
-
-    // API call
+    // Run animation + API in parallel
+    const animPromise = runAnimation();
     const apiPromise = fetch('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idea: ideaText }),
-    }).then(r => r.json())
+      body: JSON.stringify({ idea }),
+    }).then((r) => r.json());
 
-    try {
-      const [, data] = await Promise.all([logPromise, apiPromise])
-      if (data.error) throw new Error(data.error)
-      setReportData(data)
-      setActivePhase(PHASE_LOGS.length)
-      setPhase('results')
-      setActiveTab('overview')
-      setForecastAnimated(false)
-      setCompAnimated(false)
-      setTimeout(() => { setForecastAnimated(true); setCompAnimated(true) }, 150)
-    } catch (err) {
-      setError(err.message || 'Analysis failed. Please try again.')
-      setPhase('error')
+    const [, data] = await Promise.all([animPromise, apiPromise]);
+
+    if (data.error) {
+      setError(data.error);
+      setPhase('error');
+    } else {
+      setReport(data);
+      setActiveTab('Overview');
+      setPhase('results');
     }
-  }
+  };
 
-  const handleSubmit = () => {
-    if (!idea.trim()) return
-    runAnalysis(idea.trim())
-  }
+  const runAnimation = async () => {
+    await sleep(600);
+    setKiraLine(KIRA_LINES[0]);
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() }
-  }
+    for (let i = 0; i < AGENTS.length; i++) {
+      await sleep(i === 0 ? 400 : 320);
+      setAgentStates((prev) => { const n = [...prev]; n[i] = 'running'; return n; });
 
-  const handleReset = () => {
-    setPhase('input')
-    setIdea('')
-    setLogs([])
-    setReportData(null)
-    setActivePhase(-1)
-    setDonePhases([])
-    router.replace('/', undefined, { shallow: true })
-  }
+      if (i === 2) { await sleep(80); setKiraLine(KIRA_LINES[1]); }
+      if (i === 5) { await sleep(80); setKiraLine(KIRA_LINES[2]); }
+      if (i === 7) { await sleep(80); setKiraLine(KIRA_LINES[3]); }
 
-  const handleShare = () => {
-    if (!reportData) return
-    try {
-      const encoded = btoa(encodeURIComponent(JSON.stringify(reportData)))
-      const url = `${window.location.origin}?idea=${encodeURIComponent(currentIdea)}&data=${encoded}`
-      navigator.clipboard.writeText(url)
-      showToast('🔗 Share link copied to clipboard!')
-    } catch (e) {
-      showToast('Link too long to share — try Export instead')
+      await sleep(i < 3 ? 900 : i < 6 ? 1100 : 1300);
+      setAgentStates((prev) => { const n = [...prev]; n[i] = 'done'; return n; });
     }
-  }
 
-  const showToast = (msg) => {
-    const toast = document.getElementById('toast')
-    if (toast) {
-      toast.textContent = msg
-      toast.classList.add('show')
-      setTimeout(() => toast.classList.remove('show'), 3000)
-    }
-  }
+    await sleep(500);
+    setKiraLine(KIRA_LINES[4]);
+    await sleep(800);
+  };
+
+  const handleKey = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
+  };
+
+  const copyReport = () => {
+    if (!report) return;
+    const text = `# Kira Analysis: ${idea}\n\n**Verdict:** ${report.decision}\n\n${report.decisionReason}`;
+    navigator.clipboard.writeText(text);
+  };
 
   const exportMarkdown = () => {
-    if (!reportData) return
-    const d = reportData
-    const overall = Math.round(Object.values(d.scores).reduce((a, b) => a + b, 0) / 6)
-    const lines = [
-      `# Business Intelligence Report`,
-      ``,
-      `**Idea:** ${currentIdea}`,
-      `**Decision:** ${d.decision}`,
-      ``,
-      `> ${d.decisionReason}`,
-      ``,
-      `## Key Metrics`,
-      ...d.metrics.map(m => `- **${m.l}:** ${m.v} *(${m.s})*`),
-      ``,
-      `## Opportunity Score: ${overall}/100`,
-      ``,
-      ...Object.entries({ marketSize: 'Market size', differentiation: 'Differentiation', marginQuality: 'Margin quality', capitalEfficiency: 'Capital efficiency', executionComplexity: 'Execution complexity', scalability: 'Scalability' })
-        .map(([k, l]) => `- ${l}: ${d.scores[k]}/100`),
-      ``,
-      `## Market Gaps`,
-      ...d.gaps.map(g => `- ${g}`),
-      ``,
-      `## Competitors`,
-      ...d.competitors.map(c => `- **${c.name}** (${c.share}%) — ${c.weakness} [${c.threat} threat]`),
-      ``,
-      `## Buyer Personas`,
-      ...d.personas.map(p => `### ${p.name}\n- Age: ${p.age} | Channels: ${p.channels}\n- Pain: ${p.pain}\n- Trigger: ${p.trigger}`),
-      ``,
-      `## Acquisition Channels`,
-      ...d.channels.map(c => `- **${c.name}** — CAC: ${c.cac} | ${c.note} [${c.fit}]`),
-      ``,
-      `## Legal & Compliance`,
-      ...d.legal.map(l => `- ${l}`),
-      ``,
-      `## Exit Potential (Year 3)`,
-      `- Revenue: ${d.exit.yr3Rev}`,
-      `- Valuation: ${d.exit.yr3Val} (${d.exit.multiple})`,
-      `- Likely buyers: ${d.exit.buyers}`,
-      ``,
-      `## Launch Roadmap`,
-      ...d.roadmap.map(r => `- **${r[0]}:** ${r[1]}`),
-      ``,
-      `## Risk Warnings`,
-      ...d.risks.map(r => `- ${r}`),
-      ``,
-      `---`,
-      `*Business Intelligence Engine — Powered by Groq + Llama 3*`,
-    ]
-    const blob = new Blob([lines.join('\n')], { type: 'text/markdown' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url; a.download = 'business-report.md'; a.click()
-    URL.revokeObjectURL(url)
-  }
+    if (!report) return;
+    const md = `# Kira Analysis: ${idea}\n\n**Verdict:** ${report.decision}\n\n${report.decisionReason}\n\n## Metrics\n${report.metrics?.map(m => `- **${m.l}:** ${m.v}`).join('\n')}`;
+    const blob = new Blob([md], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'kira-analysis.md'; a.click();
+  };
 
-  const overall = reportData ? Math.round(Object.values(reportData.scores).reduce((a, b) => a + b, 0) / 6) : 0
+  const shareReport = () => {
+    if (!report) return;
+    try {
+      const encoded = btoa(encodeURIComponent(JSON.stringify(report)));
+      const url = `${window.location.origin}?idea=${encodeURIComponent(idea)}&data=${encoded}`;
+      navigator.clipboard.writeText(url);
+    } catch {}
+  };
 
+  const reset = () => {
+    setPhase('input');
+    setIdea('');
+    setReport(null);
+    setError('');
+  };
+
+  // ─── INPUT SCREEN ────────────────────────────────────────────────────────────
+  if (phase === 'input') return (
+    <div className="page">
+      <div className="home-center">
+        <h1 className="greeting">Hi, I'm Kira.</h1>
+        <div className="input-wrap">
+          <textarea
+            ref={textareaRef}
+            className="input-field"
+            placeholder="What's the business idea keeping you up at night?"
+            value={idea}
+            onChange={(e) => setIdea(e.target.value)}
+            onKeyDown={handleKey}
+            rows={3}
+          />
+          <div className="input-bottom">
+            <div className="input-left" onClick={(e) => e.stopPropagation()}>
+              <div className="version-wrap">
+                <button className="version-btn" onClick={() => setVersionOpen(!versionOpen)}>
+                  <span className="version-label">{version}</span>
+                  <span className="chevron" />
+                </button>
+                {versionOpen && (
+                  <div className="dropdown">
+                    {['Kira 1.0', 'Kira 1.1'].map((v) => (
+                      <div
+                        key={v}
+                        className={`dd-item ${version === v ? 'active' : ''}`}
+                        onClick={() => { setVersion(v); setVersionOpen(false); }}
+                      >
+                        {v}
+                        <span className={`dd-badge ${v === 'Kira 1.1' ? 'soon' : ''}`}>
+                          {v === 'Kira 1.0' ? 'current' : 'soon'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <button className="send-btn" onClick={submit}>
+              <span className="send-arrow" />
+            </button>
+          </div>
+        </div>
+        <div className="chips-row">
+          <div className="chips">
+            {chips.map((c) => (
+              <button key={c} className="chip" onClick={() => setIdea(c)}>{c}</button>
+            ))}
+          </div>
+          <button className={`shuffle-btn ${spinning ? 'spinning' : ''}`} onClick={shuffle} title="Shuffle ideas">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="16 3 21 3 21 8" />
+              <line x1="4" y1="20" x2="21" y2="3" />
+              <polyline points="21 16 21 21 16 21" />
+              <line x1="15" y1="15" x2="21" y2="21" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ─── RUNNING SCREEN ───────────────────────────────────────────────────────────
+  if (phase === 'running') return (
+    <div className="page">
+      <div className="running-body">
+        <div className="idea-pill">{idea}</div>
+        <p className="kira-line">{kiraLine}</p>
+        <div className="agents">
+          {AGENTS.map((a, i) => (
+            <div key={a.name} className={`agent ${agentStates[i]}`} style={{ animationDelay: `${i * 80}ms` }}>
+              <span className="dot" />
+              <span className="agent-name">{a.name}</span>
+              <span className="agent-status">
+                {agentStates[i] === 'running' ? a.status : agentStates[i] === 'done' ? 'done' : '—'}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  // ─── ERROR SCREEN ─────────────────────────────────────────────────────────────
+  if (phase === 'error') return (
+    <div className="page">
+      <div className="running-body">
+        <div className="idea-pill">{idea}</div>
+        <div className="error-card">
+          <p className="error-title">Something went wrong</p>
+          <p className="error-msg">{error}</p>
+          <button className="reset-btn" onClick={reset}>Try again</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ─── RESULTS SCREEN ───────────────────────────────────────────────────────────
+  const dc = report?.decisionClass || 'v-go';
   return (
-    <>
-      <Head>
-        <title>Business Intelligence Engine</title>
-        <meta name="description" content="AI-powered business idea analysis — demand, margins, competitors, personas, channels & more" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
-      </Head>
+    <div className="page results-page">
+      <div className="results-topbar">
+        <div className="results-tabs">
+          {TABS.map((t) => (
+            <button key={t} className={`rtab ${activeTab === t ? 'active' : ''}`} onClick={() => setActiveTab(t)}>{t}</button>
+          ))}
+        </div>
+        <div className="results-actions">
+          <button className="action-btn" onClick={exportMarkdown}>Export</button>
+          <button className="action-btn" onClick={copyReport}>Copy</button>
+          <button className="action-btn share" onClick={shareReport}>Share ↗</button>
+        </div>
+      </div>
 
-      <div className="glow-blob" />
-
-      <div className="page">
-        <div className="header">
-          <div className="header-eyebrow">AI-Powered Analysis</div>
-          <h1>Business Intelligence Engine</h1>
-          <p>13-agent deep analysis — demand, margins, gaps, competitors, personas, channels, legal & exit</p>
+      <div className="results-body">
+        {/* VERDICT */}
+        <div className={`verdict-card ${dc}`}>
+          <span className="verdict-badge">{report?.decision}</span>
+          <p className="verdict-reason">{report?.decisionReason}</p>
         </div>
 
-        {/* INPUT */}
-        {phase === 'input' && (
-          <>
-            <div className="input-card">
-              <div className="input-row">
-                <textarea
-                  value={idea}
-                  onChange={e => setIdea(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder='Describe any business idea... e.g. "I want to launch a premium pet food brand"'
-                  rows={2}
-                  autoFocus
-                />
-                <button className="run-btn" onClick={handleSubmit} disabled={!idea.trim()}>
-                  Analyze ↗
-                </button>
-              </div>
-            </div>
-            <div className="chips-label">Quick starts</div>
-            <div className="chips">
-              {QUICK_STARTS.map(q => (
-                <div key={q} className="chip" onClick={() => setIdea(q)}>{q}</div>
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* RUNNING */}
-        {phase === 'running' && (
-          <>
-            <div className="phase-bar">
-              {PHASE_LOGS.map((p, i) => (
-                <div key={i} className={`phase-pill${activePhase === i ? ' active' : ''}${donePhases.includes(i) ? ' done' : ''}`}>
-                  {p.tag}
+        {/* OVERVIEW TAB */}
+        {activeTab === 'Overview' && (
+          <div className="tab-content">
+            <div className="metrics-grid">
+              {report?.metrics?.map((m) => (
+                <div key={m.l} className="metric-card">
+                  <div className="metric-val">{m.v}</div>
+                  <div className="metric-label">{m.l}</div>
+                  {m.s && <div className="metric-sub">{m.s}</div>}
                 </div>
               ))}
             </div>
-            <div className="agent-log" ref={logRef}>
-              <div className="log-line" style={{ fontWeight: 500, marginBottom: 6 }}>
-                <span>13 agents running</span><span className="pulse" />
-              </div>
-              {logs.map(log => (
-                <div key={log.id} className="log-line">
-                  <span className={`log-tag ${log.cls}`}>{log.tag}</span>
-                  <span>{log.text}</span>
-                </div>
-              ))}
+            <div className="section-block">
+              <div className="section-title">Market gaps</div>
+              {report?.gaps?.map((g, i) => <div key={i} className="gap-row">{g}</div>)}
             </div>
-          </>
-        )}
-
-        {/* ERROR */}
-        {phase === 'error' && (
-          <>
-            <div className="error-card">
-              <strong>Analysis failed</strong><br />
-              {error}<br /><br />
-              Make sure your <code>GROQ_API_KEY</code> environment variable is set in Vercel.
+            <div className="section-block">
+              <div className="section-title">Risks</div>
+              {report?.risks?.map((r, i) => <div key={i} className="risk-row">{typeof r === 'string' ? r : r.r}</div>)}
             </div>
-            <button className="reset-btn" onClick={handleReset} style={{ marginTop: '1rem' }}>
-              ← Try again
-            </button>
-          </>
-        )}
-
-        {/* RESULTS */}
-        {phase === 'results' && reportData && (
-          <>
-            {/* Phase bar — all done */}
-            <div className="phase-bar">
-              {PHASE_LOGS.map((p, i) => (
-                <div key={i} className="phase-pill done">{p.tag}</div>
-              ))}
-            </div>
-
-            {/* Verdict */}
-            <div className={`verdict-card ${reportData.decisionClass}`}>
-              <div className={`vt ${reportData.dtc}`}>{reportData.decision}</div>
-              <div className={`vb ${reportData.dbc}`}>{reportData.decisionReason}</div>
-            </div>
-
-            {/* Tabs */}
-            <div className="section-tabs">
-              {['overview', 'score', 'market', 'personas', 'channels', 'legal', 'blueprint'].map(tab => (
-                <button key={tab} className={`tab${activeTab === tab ? ' active' : ''}`} onClick={() => {
-                  setActiveTab(tab)
-                  if (tab === 'overview') { setForecastAnimated(false); setTimeout(() => setForecastAnimated(true), 80) }
-                  if (tab === 'market') { setCompAnimated(false); setTimeout(() => setCompAnimated(true), 80) }
-                }}>
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
-              ))}
-            </div>
-
-            {/* OVERVIEW TAB */}
-            {activeTab === 'overview' && (
-              <div>
-                <div className="metrics-grid">
-                  {reportData.metrics.map((m, i) => (
-                    <div key={i} className="metric-card">
-                      <div className="label">{m.l}</div>
-                      <div className="value">{m.v}</div>
-                      <div className="sub">{m.s}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="card">
-                  <h3>Market gaps</h3>
-                  {reportData.gaps.map((g, i) => (
-                    <div key={i} className="ins-row">
-                      <div className="dot dot-a" />
-                      <div className="ins-text">{g}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="card">
-                  <h3>Revenue forecast</h3>
-                  {reportData.forecastBars.map((b, i) => (
-                    <div key={i} className="fb-wrap">
-                      <div className="fb-label"><span>{b.label}</span><span>{b.val}</span></div>
-                      <div className="fb-track">
-                        <div className="fb-fill" style={{ width: forecastAnimated ? `${b.pct}%` : '0%' }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="card">
-                  <h3>Risk warnings</h3>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                    {reportData.risks.map((r, i) => <span key={i} className="risk-chip">{r}</span>)}
+            <div className="section-block">
+              <div className="section-title">Revenue forecast</div>
+              {report?.forecastBars?.map((b) => (
+                <div key={b.label} className="forecast-row">
+                  <span className="forecast-label">{b.label}</span>
+                  <div className="forecast-bar-wrap">
+                    <div className="forecast-bar" style={{ width: `${b.pct}%` }} />
                   </div>
+                  <span className="forecast-val">{b.val}</span>
                 </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* SCORE TAB */}
+        {activeTab === 'Score' && (
+          <div className="tab-content">
+            <RadarChart scores={report?.scores} />
+            <div className="section-block">
+              {report?.scores && Object.entries(report.scores).map(([k, v]) => (
+                <div key={k} className="score-row">
+                  <span className="score-label">{k.replace(/([A-Z])/g, ' $1').toLowerCase()}</span>
+                  <div className="score-bar-wrap"><div className="score-bar" style={{ width: `${v}%` }} /></div>
+                  <span className="score-val">{v}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* MARKET TAB */}
+        {activeTab === 'Market' && (
+          <div className="tab-content">
+            <div className="section-title">Competitor landscape</div>
+            {report?.competitors?.map((c) => (
+              <div key={c.name} className="competitor-card">
+                <div className="comp-header">
+                  <span className="comp-name">{c.name}</span>
+                  <span className="comp-share">{c.share}</span>
+                </div>
+                <div className="comp-weakness">Weakness: {c.weakness}</div>
+                <div className="comp-threat">Threat level: {c.threat}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* PERSONAS TAB */}
+        {activeTab === 'Personas' && (
+          <div className="tab-content">
+            {report?.personas?.map((p) => (
+              <div key={p.name} className="persona-card">
+                <div className="persona-header">
+                  <span className="persona-name">{p.name}</span>
+                  <span className="persona-tag">{p.tag}</span>
+                </div>
+                <div className="persona-age">Age: {p.age}</div>
+                <div className="persona-row"><span className="pr-label">Channels</span><span>{p.channels}</span></div>
+                <div className="persona-row"><span className="pr-label">Pain</span><span>{p.pain}</span></div>
+                <div className="persona-row"><span className="pr-label">Trigger</span><span>{p.trigger}</span></div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* CHANNELS TAB */}
+        {activeTab === 'Channels' && (
+          <div className="tab-content">
+            <div className="section-title">Acquisition channels</div>
+            {report?.channels?.map((c) => (
+              <div key={c.name} className="channel-card">
+                <div className="channel-header">
+                  <span className="channel-name">{c.name}</span>
+                  <span className={`fit-badge fit-${c.fit?.toLowerCase()}`}>{c.fit}</span>
+                </div>
+                <div className="channel-cac">CAC: {c.cac}</div>
+                <div className="channel-note">{c.note}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* LEGAL TAB */}
+        {activeTab === 'Legal' && (
+          <div className="tab-content">
+            <div className="section-block">
+              <div className="section-title">Legal requirements</div>
+              {report?.legal?.map((l, i) => <div key={i} className="legal-row">{l}</div>)}
+            </div>
+            {report?.exit && (
+              <div className="section-block">
+                <div className="section-title">Exit potential</div>
+                <div className="exit-grid">
+                  <div className="exit-item"><div className="exit-val">{report.exit.yr3Rev}</div><div className="exit-label">Yr 3 revenue</div></div>
+                  <div className="exit-item"><div className="exit-val">{report.exit.multiple}</div><div className="exit-label">Multiple</div></div>
+                  <div className="exit-item"><div className="exit-val">{report.exit.yr3Val}</div><div className="exit-label">Valuation</div></div>
+                </div>
+                <div className="exit-buyers">Likely buyers: {report.exit.buyers}</div>
               </div>
             )}
+          </div>
+        )}
 
-            {/* SCORE TAB */}
-            {activeTab === 'score' && (
-              <div>
-                <div className="overall-score">
-                  <div className="os-num">{overall}</div>
-                  <div className="os-label">Overall opportunity score / 100</div>
-                </div>
-                <RadarChart scores={reportData.scores} />
-                <div className="card" style={{ marginTop: '1rem' }}>
-                  <h3>Score breakdown</h3>
-                  {Object.entries({
-                    marketSize: 'Market size',
-                    differentiation: 'Differentiation',
-                    marginQuality: 'Margin quality',
-                    capitalEfficiency: 'Capital efficiency',
-                    executionComplexity: 'Execution complexity',
-                    scalability: 'Scalability',
-                  }).map(([k, l]) => (
-                    <div key={k} className="spec-row">
-                      <span className="sk">{l}</span>
-                      <span className="sv" style={{ color: reportData.scores[k] >= 70 ? '#10b981' : reportData.scores[k] >= 55 ? '#f59e0b' : '#ef4444' }}>
-                        {reportData.scores[k]}/100
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* MARKET TAB */}
-            {activeTab === 'market' && (
-              <div>
-                <div className="card">
-                  <h3>Competitive landscape</h3>
-                  {reportData.competitors.map((c, i) => {
-                    const color = c.threat === 'high' ? '#ef4444' : c.threat === 'med' ? '#f59e0b' : '#10b981'
-                    const chipBg = c.threat === 'high' ? 'rgba(239,68,68,0.1)' : c.threat === 'med' ? 'rgba(245,158,11,0.1)' : 'rgba(16,185,129,0.1)'
-                    return (
-                      <div key={i} className="comp-row">
-                        <div className="comp-name">{c.name}</div>
-                        <div className="comp-bar-wrap">
-                          <div className="comp-bar-track">
-                            <div className="comp-bar-fill" style={{ width: compAnimated ? `${c.share}%` : '0%', background: color }} />
-                          </div>
-                        </div>
-                        <span style={{ fontSize: 12, color: 'var(--text2)', minWidth: 32 }}>{c.share}%</span>
-                        <span className="comp-chip" style={{ background: chipBg, color, border: `1px solid ${color}22` }}>{c.threat}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-                <div className="card">
-                  <h3>Weaknesses to exploit</h3>
-                  {reportData.competitors.slice(0, 3).map((c, i) => (
-                    <div key={i} className="ins-row">
-                      <div className="dot dot-p" />
-                      <div className="ins-text"><strong>{c.name}:</strong> {c.weakness}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* PERSONAS TAB */}
-            {activeTab === 'personas' && (
-              <div>
-                {reportData.personas.map((p, i) => (
-                  <div key={i} className="persona-card">
-                    <div className="pname">{p.name}</div>
-                    <span className="ptag">{p.tag}</span>
-                    <div className="pdet">
-                      <strong>Age:</strong> {p.age} &nbsp;|&nbsp; <strong>Channels:</strong> {p.channels}<br />
-                      <strong>Pain:</strong> {p.pain}<br />
-                      <strong>Trigger:</strong> {p.trigger}
-                    </div>
+        {/* BLUEPRINT TAB */}
+        {activeTab === 'Blueprint' && (
+          <div className="tab-content">
+            {report?.spec && (
+              <div className="section-block">
+                <div className="section-title">Product spec</div>
+                {report.spec.map(([label, value], i) => (
+                  <div key={i} className="spec-row">
+                    <span className="spec-label">{label}</span>
+                    <span className="spec-val">{value}</span>
                   </div>
                 ))}
               </div>
             )}
-
-            {/* CHANNELS TAB */}
-            {activeTab === 'channels' && (
-              <div className="card">
-                <h3>Acquisition channels — ranked by fit</h3>
-                {reportData.channels.map((c, i) => {
-                  const isPrimary = c.fit === 'Primary' || c.fit === 'High'
-                  return (
-                    <div key={i} className="ch-row">
-                      <div className="ch-name">{c.name}</div>
-                      <div className="ch-cac">CAC: {c.cac}</div>
-                      <div style={{ flex: 1, fontSize: 12, color: 'var(--text2)' }}>{c.note}</div>
-                      <span className="fit-badge" style={{
-                        background: isPrimary ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)',
-                        color: isPrimary ? '#10b981' : '#f59e0b',
-                      }}>{c.fit}</span>
-                    </div>
-                  )
-                })}
+            {report?.roadmap && (
+              <div className="section-block">
+                <div className="section-title">Launch roadmap</div>
+                {report.roadmap.map(([time, action], i) => (
+                  <div key={i} className="roadmap-row">
+                    <span className="roadmap-time">{time}</span>
+                    <span className="roadmap-action">{action}</span>
+                  </div>
+                ))}
               </div>
             )}
-
-            {/* LEGAL TAB */}
-            {activeTab === 'legal' && (
-              <div>
-                <div className="card">
-                  <h3>Legal & compliance checklist</h3>
-                  {reportData.legal.map((l, i) => (
-                    <div key={i} className="ins-row">
-                      <div className="dot dot-r" />
-                      <div className="ins-text">{l}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="card">
-                  <h3>Exit potential (Year 3)</h3>
-                  {[
-                    ['Projected revenue', reportData.exit.yr3Rev],
-                    ['Valuation multiple', reportData.exit.multiple],
-                    ['Estimated exit value', reportData.exit.yr3Val],
-                    ['Likely buyers', reportData.exit.buyers],
-                  ].map(([k, v], i) => (
-                    <div key={i} className="spec-row">
-                      <span className="sk">{k}</span>
-                      <span className="sv" style={{ fontSize: k === 'Likely buyers' ? 11 : undefined }}>{v}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* BLUEPRINT TAB */}
-            {activeTab === 'blueprint' && (
-              <div>
-                <div className="card">
-                  <h3>Product / service spec</h3>
-                  {reportData.spec.map(([k, v], i) => (
-                    <div key={i} className="spec-row">
-                      <span className="sk">{k}</span>
-                      <span className="sv">{v}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="card">
-                  <h3>Launch roadmap</h3>
-                  {reportData.roadmap.map(([k, v], i) => (
-                    <div key={i} className="spec-row">
-                      <span className="sk" style={{ color: 'var(--accent2)', fontWeight: 500 }}>{k}</span>
-                      <span className="sv">{v}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Export bar */}
-            <div className="export-bar">
-              <button className="exp-btn primary" onClick={exportMarkdown}>Export report (.md)</button>
-              <button className="share-btn" onClick={handleShare}>🔗 Share report</button>
-              <button className="exp-btn" onClick={() => {
-                const d = reportData
-                const text = `BUSINESS REPORT\n\nIdea: ${currentIdea}\nDecision: ${d.decision}\n\n${d.decisionReason}\n\nScore: ${overall}/100\n\nMetrics:\n${d.metrics.map(m => `${m.l}: ${m.v}`).join('\n')}\n\nGaps:\n${d.gaps.map(g => `• ${g}`).join('\n')}\n\nRisks:\n${d.risks.map(r => `• ${r}`).join('\n')}`
-                navigator.clipboard.writeText(text)
-                showToast('📋 Copied to clipboard!')
-              }}>Copy as text</button>
-            </div>
-
-            <button className="reset-btn" onClick={handleReset}>← Analyze a different idea</button>
-          </>
+          </div>
         )}
-      </div>
 
-      <div id="toast" className="toast" />
-    </>
-  )
+        <button className="new-idea-btn" onClick={reset}>Analyze another idea</button>
+      </div>
+    </div>
+  );
 }
