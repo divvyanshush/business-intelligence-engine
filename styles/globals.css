@@ -25,7 +25,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .page { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
 
 /* ─── HOME SCREEN ───────────────────────────────────────────────────────────── */
-.home-center { display: flex; flex-direction: column; align-items: center; padding: 80px 24px 48px; width: 100%; max-width: 600px; }
+.home-center { display: flex; flex-direction: column; align-items: center; padding: 0 24px; width: 100%; max-width: 600px; min-height: 100vh; justify-content: center; }
 
 .greeting { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 500; color: var(--text); letter-spacing: -0.03em; margin-bottom: 32px; text-align: center; }
 
@@ -52,7 +52,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 /* Send button */
 .send-btn { width: 30px; height: 30px; background: var(--text); border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: opacity 0.15s; }
 .send-btn:hover { opacity: 0.85; }
-.send-arrow { width: 0; height: 0; border-left: 9px solid #000; border-top: 5px solid transparent; border-bottom: 5px solid transparent; margin-left: 2px; }
+.send-arrow { display: block; width: 10px; height: 10px; border-right: 2px solid #000; border-top: 2px solid #000; transform: rotate(45deg) translate(-1px, 1px); }
 
 /* Chips */
 .chips-row { display: flex; align-items: center; gap: 10px; margin-top: 14px; width: 100%; }
