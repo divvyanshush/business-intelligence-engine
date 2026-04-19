@@ -3,9 +3,6 @@ export default async function handler(req, res) {
   const { idea } = req.body;
   if (!idea) return res.status(400).json({ error: 'No idea provided' });
 
-  const SYSTEM = `You are a business analyst. Return ONLY valid JSON, no markdown, no explanation. Analyze the business idea and return this exact structure:
-{"decision":"GO — reason","decisionClass":"v-go","dtc":"go-t","dbc":"go-b","decisionReason":"2-3 sentence analysis","metrics":[{"l":"Year-1 revenue","v":"$500K","s":"estimate"},{"l":"Net margin","v":"35%","s":"after costs"},{"l":"Launch capital","v":"$15,000","s":"to start"},{"l":"Success probability","v":"45%","s":"with USP"}],"scores":{"marketSize":70,"differentiation":65,"marginQuality":72,"capitalEfficiency":68,"executionComplexity":60,"scalability":75},"gaps":["gap1","gap2","gap3","gap4"],"competitors":[{"name":"Competitor 1","share":30,"weakness":"weakness","threat":"high"},{"name":"Competitor 2","share":25,"weakness":"weakness","threat":"med"},{"name":"Competitor 3","share":20,"weakness":"weakness","threat":"med"},{"name":"Competitor 4","share":15,"weakness":"weakness","threat":"low"},{"name":"Others","share":10,"weakness":"fragmented","threat":"low"}],"personas":[{"name":"Persona 1","tag":"Primary","age":"25-40","channels":"Instagram, Google","pain":"main pain","trigger":"purchase trigger"},{"name":"Persona 2","tag":"Secondary","age":"30-50","channels":"LinkedIn","pain":"pain","trigger":"trigger"},{"name":"Persona 3","tag":"Tertiary","age":"35-55","channels":"Google","pain":"pain","trigger":"trigger"}],"channels":[{"name":"Channel 1","cac":"$10-20","fit":"Primary","note":"details"},{"name":"Channel 2","cac":"$15-25","fit":"High","note":"details"},{"name":"Channel 3","cac":"$20-35","fit":"Medium","note":"details"},{"name":"Channel 4","cac":"$5-15","fit":"High","note":"details"},{"name":"Channel 5","cac":"$25-50","fit":"Medium","note":"details"}],"legal":["legal1","legal2","legal3","legal4"],"exit":{"yr3Rev":"$2M","multiple":"2-4x","yr3Val":"$4-8M","buyers":"Strategic acquirers"},"risks":["risk1","risk2","risk3","risk4","risk5"],"roadmap":[["Weeks 1-4","action"],["Weeks 5-8","action"],["Month 3","action"],["Month 4-6","action"],["Month 7-12","action"]],"spec":[["Product","description"],["Price","$X"],["Target","audience"],["Key feature","feature"],["Launch channel","channel"]],"forecastBars":[{"label":"Month 1","val":"early","pct":5},{"label":"Month 3","val":"growing","pct":20},{"label":"Month 6","val":"scaling","pct":50},{"label":"Month 12","val":"mature","pct":100}]}`;
-
   try {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -16,22 +13,31 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
         messages: [
-          { role: 'system', content: SYSTEM },
-          { role: 'user', content: `Analyze this business idea: "${idea}"` }
+          { role: 'system', content: `You are a business analyst. Return ONLY valid JSON with no markdown, no backticks, no explanation. Use this exact structure with realistic data for the business idea given: {"decision":"GO — reason","decisionClass":"v-go","dtc":"go-t","dbc":"go-b","decisionReason":"2-3 sentences","metrics":[{"l":"Year-1 revenue","v":"$500K","s":"estimate"},{"l":"Net margin","v":"35%","s":"after costs"},{"l":"Launch capital","v":"$15000","s":"to start"},{"l":"Success probability","v":"45%","s":"with USP"}],"scores":{"marketSize":70,"differentiation":65,"marginQuality":72,"capitalEfficiency":68,"executionComplexity":60,"scalability":75},"gaps":["gap 1","gap 2","gap 3","gap 4"],"competitors":[{"name":"Name","share":30,"weakness":"weakness","threat":"high"},{"name":"Name","share":25,"weakness":"weakness","threat":"med"},{"name":"Name","share":20,"weakness":"weakness","threat":"med"},{"name":"Name","share":15,"weakness":"weakness","threat":"low"},{"name":"Others","share":10,"weakness":"fragmented","threat":"low"}],"personas":[{"name":"Persona","tag":"Primary","age":"25-40","channels":"Instagram","pain":"pain point","trigger":"trigger"},{"name":"Persona","tag":"Secondary","age":"30-50","channels":"Google","pain":"pain","trigger":"trigger"},{"name":"Persona","tag":"Tertiary","age":"35-55","channels":"Search","pain":"pain","trigger":"trigger"}],"channels":[{"name":"Channel","cac":"$10-20","fit":"Primary","note":"note"},{"name":"Channel","cac":"$15-25","fit":"High","note":"note"},{"name":"Channel","cac":"$20-35","fit":"Medium","note":"note"},{"name":"Channel","cac":"$5-15","fit":"High","note":"note"},{"name":"Channel","cac":"$25-50","fit":"Medium","note":"note"}],"legal":["item 1","item 2","item 3","item 4"],"exit":{"yr3Rev":"$2M","multiple":"2-4x","yr3Val":"$4-8M","buyers":"Strategic acquirers"},"risks":["risk 1","risk 2","risk 3","risk 4","risk 5"],"roadmap":[["Weeks 1-4","action"],["Weeks 5-8","action"],["Month 3","action"],["Month 4-6","action"],["Month 7-12","action"]],"spec":[["Product","desc"],["Price","$X"],["Target","audience"],["Feature","detail"],["Channel","channel"]],"forecastBars":[{"label":"Month 1","val":"early","pct":5},{"label":"Month 3","val":"growing","pct":20},{"label":"Month 6","val":"scaling","pct":50},{"label":"Month 12","val":"mature","pct":100}]}` },
+          { role: 'user', content: `Analyze this business idea and return JSON only: "${idea}"` }
         ],
-        temperature: 0.7,
-        max_tokens: 4000,
+        temperature: 0.3,
+        max_tokens: 3000,
       }),
     });
 
     const data = await response.json();
     if (!response.ok) throw new Error(JSON.stringify(data));
     
-    const text = data.choices[0].message.content;
-    const match = text.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error('No JSON in response');
+    let text = data.choices[0].message.content.trim();
     
-    return res.status(200).json(JSON.parse(match[0]));
+    // Strip markdown if present
+    text = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+    
+    // Find JSON object
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start === -1 || end === -1) throw new Error('No JSON found in response');
+    
+    text = text.slice(start, end + 1);
+    
+    const parsed = JSON.parse(text);
+    return res.status(200).json(parsed);
   } catch (err) {
     console.error('Error:', err.message);
     return res.status(500).json({ error: err.message });
