@@ -318,7 +318,17 @@ export default function Home() {
         {/* SCORE TAB */}
         {activeTab === 'Score' && (
           <div className="tab-content">
-            <RadarChart scores={report?.scores} />
+            <div className="radar-container">
+              {report?.scores && (
+                <>
+                  <div className="overall-score">
+                    {Math.round(Object.values(report.scores).reduce((a, b) => a + b, 0) / Object.values(report.scores).length)}
+                  </div>
+                  <div className="overall-score-label">Overall opportunity score / 100</div>
+                </>
+              )}
+              <RadarChart scores={report?.scores} />
+            </div>
             <div className="section-block">
               {report?.scores && Object.entries(report.scores).map(([k, v]) => (
                 <div key={k} className="score-row">

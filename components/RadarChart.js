@@ -7,28 +7,31 @@ export default function RadarChart({ scores }) {
   useEffect(() => {
     if (!canvasRef.current || !scores) return
 
-    // Dynamically import Chart.js to avoid SSR issues
-    import('chart.js').then(({ Chart, RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend }) => {
-      Chart.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend)
+    const labels = ['Market Size', 'Differentiation', 'Margin Quality', 'Capital Efficiency', 'Exec. Complexity', 'Scalability']
+    const keys = ['marketSize', 'differentiation', 'marginQuality', 'capitalEfficiency', 'executionComplexity', 'scalability']
+    const values = keys.map(k => scores[k] ?? 0)
+
+    import('chart.js').then(({ Chart, RadialLinearScale, PointElement, LineElement, Filler, Tooltip }) => {
+      Chart.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip)
 
       if (chartRef.current) {
         chartRef.current.destroy()
+        chartRef.current = null
       }
 
       chartRef.current = new Chart(canvasRef.current, {
         type: 'radar',
         data: {
-          labels: ['Market size', 'Differentiation', 'Margin quality', 'Capital efficiency', 'Exec. complexity', 'Scalability'],
+          labels,
           datasets: [{
-            label: 'Score',
-            data: Object.values(scores),
-            backgroundColor: 'rgba(108,99,255,0.15)',
-            borderColor: '#6c63ff',
-            borderWidth: 2,
-            pointBackgroundColor: '#6c63ff',
-            pointBorderColor: '#a78bfa',
-            pointRadius: 5,
-            pointHoverRadius: 7,
+            data: values,
+            backgroundColor: 'rgba(99, 102, 241, 0.12)',
+            borderColor: '#6366f1',
+            borderWidth: 1.5,
+            pointBackgroundColor: '#6366f1',
+            pointBorderColor: '#6366f1',
+            pointRadius: 4,
+            pointHoverRadius: 6,
           }],
         },
         options: {
@@ -37,11 +40,12 @@ export default function RadarChart({ scores }) {
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: '#1c1c28',
-              borderColor: 'rgba(255,255,255,0.1)',
+              backgroundColor: '#111111',
+              borderColor: '#1e1e1e',
               borderWidth: 1,
-              titleColor: '#f0efe8',
-              bodyColor: '#8b8a9b',
+              titleColor: '#ffffff',
+              bodyColor: '#888888',
+              padding: 10,
             }
           },
           scales: {
@@ -51,19 +55,19 @@ export default function RadarChart({ scores }) {
               ticks: {
                 stepSize: 25,
                 font: { size: 9 },
-                color: '#4a4a5e',
+                color: '#444444',
                 backdropColor: 'transparent',
               },
-              grid: { color: 'rgba(255,255,255,0.06)' },
-              angleLines: { color: 'rgba(255,255,255,0.06)' },
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              angleLines: { color: 'rgba(255,255,255,0.05)' },
               pointLabels: {
                 font: { size: 11, family: "'DM Sans', sans-serif" },
-                color: '#8b8a9b',
+                color: '#888888',
               },
             }
           },
           animation: {
-            duration: 1000,
+            duration: 800,
             easing: 'easeInOutQuart',
           }
         }
@@ -79,8 +83,8 @@ export default function RadarChart({ scores }) {
   }, [scores])
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center' }}>
-      <canvas ref={canvasRef} style={{ maxWidth: 320, maxHeight: 320 }} />
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', padding: '16px 0' }}>
+      <canvas ref={canvasRef} style={{ width: '300px', height: '300px', maxWidth: '300px', maxHeight: '300px' }} />
     </div>
   )
 }

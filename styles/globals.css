@@ -220,3 +220,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   .results-actions .action-btn:not(.share) { display: none; }
   .exit-grid { grid-template-columns: 1fr 1fr; }
 }
+
+.radar-container { display: flex; flex-direction: column; align-items: center; padding: 24px 0 16px; }
+.overall-score { font-family: 'Syne', sans-serif; font-size: 56px; font-weight: 700; color: #6366f1; line-height: 1; }
+.overall-score-label { font-size: 12px; color: #888888; margin-top: 4px; margin-bottom: 24px; }
