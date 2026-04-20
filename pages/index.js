@@ -419,7 +419,7 @@ export default function Home() {
               {report?.scores && Object.entries(report.scores).map(([k, v]) => (
                 <div key={k} className="score-row">
                   <span className="score-label">{k.replace(/([A-Z])/g, ' $1').toLowerCase()}</span>
-                  <div className="score-bar-wrap"><div className="score-bar" style={{ width: `${v}%` }} /></div>
+                  <div className="score-bar-wrap"><div className="score-bar" style={{ width: `${v * 10}%` }} /></div>
                   <span className="score-val">{v}</span>
                 </div>
               ))}
