@@ -6,12 +6,12 @@
   --bg:      #0c0c0c;
   --bg2:     #111111;
   --bg3:     #161616;
-  --border:  rgba(255,255,255,0.08);
-  --border2: rgba(255,255,255,0.14);
+  --border:  rgba(255,255,255,0.10);
+  --border2: rgba(255,255,255,0.18);
   --text:    #ffffff;
-  --text2:   rgba(255,255,255,0.68);
-  --text3:   rgba(255,255,255,0.36);
-  --text4:   rgba(255,255,255,0.18);
+  --text2:   rgba(255,255,255,0.72);
+  --text3:   rgba(255,255,255,0.52);
+  --text4:   rgba(255,255,255,0.28);
   --accent:        #6366f1;
   --green:         #4ade80;
   --green-dim:     rgba(74,222,128,0.5);
@@ -20,7 +20,7 @@
   --amber:         #fbbf24;
 }
 
-html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; line-height: 1.65; font-variant-numeric: tabular-nums; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 16px; line-height: 1.7; font-variant-numeric: tabular-nums; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
 
 /* ─── PAGE ───────────────────────────────────────────────────────────────────── */
 .page { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
@@ -34,7 +34,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .input-wrap:focus-within { border-color: var(--border2); }
 
 .input-field { width: 100%; background: transparent; border: none; outline: none; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); resize: none; line-height: 1.6; }
-.input-field::placeholder { color: var(--text3); }
+.input-field::placeholder { color: rgba(255,255,255,0.44); }
 
 .input-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
 .input-left { display: flex; align-items: center; }
@@ -58,7 +58,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 /* Chips */
 .chips-row { display: flex; align-items: center; gap: 8px; margin-top: 16px; width: 100%; }
 .chips { display: flex; gap: 4px; flex: 1; overflow: hidden; height: 28px; }
-.chip { background: transparent; border: none; outline: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; color: var(--text3); cursor: pointer; white-space: nowrap; flex-shrink: 0; font-family: 'DM Sans', sans-serif; transition: color 0.15s, background 0.15s; }
+.chip { background: transparent; border: none; outline: none; border-radius: 6px; padding: 4px 10px; font-size: 13px; color: var(--text3); cursor: pointer; white-space: nowrap; flex-shrink: 0; font-family: 'DM Sans', sans-serif; transition: color 0.15s, background 0.15s; }
 .chip:hover { color: var(--text2); background: var(--bg3); }
 
 .shuffle-btn { width: 28px; height: 28px; background: transparent; border: none; outline: none; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; color: var(--text3); transition: color 0.15s, background 0.15s; }
