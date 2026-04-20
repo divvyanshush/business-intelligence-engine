@@ -317,9 +317,16 @@ export default function Home() {
             <div key={a.name} className={`agent ${agentStates[i]}`} style={{ animationDelay: `${i * 80}ms` }}>
               <span className="dot" />
               <span className="agent-name">{a.name}</span>
-              <span className="agent-status">
-                {agentStates[i] === 'running' ? a.status : agentStates[i] === 'done' ? 'done' : '—'}
-              </span>
+              {agentStates[i] === 'done' ? (
+                <svg className="tick-svg animate" viewBox="0 0 15 15">
+                  <circle className="tick-circle" cx="7.5" cy="7.5" r="5.8"/>
+                  <polyline className="tick-check" points="4.8,7.5 6.8,9.8 10.5,5.5"/>
+                </svg>
+              ) : (
+                <span className="agent-status">
+                  {agentStates[i] === 'running' ? a.status : '—'}
+                </span>
+              )}
             </div>
           ))}
         </div>
