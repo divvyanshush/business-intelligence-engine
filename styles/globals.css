@@ -3,24 +3,24 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #0c0c0c;
-  --bg2: #111111;
-  --bg3: #161616;
-  --border: #1e1e1e;
-  --border2: #2a2a2a;
-  --text: #ffffff;
-  --text2: #888888;
-  --text3: #444444;
-  --text4: #2a2a2a;
-  --accent: #6366f1;
-  --green: #4ade80;
-  --green-dim: #166534;
-  --green-bg: #0d2218;
-  --red: #f87171;
-  --amber: #fbbf24;
+  --bg:      #0c0c0c;
+  --bg2:     #111111;
+  --bg3:     #161616;
+  --border:  rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text:    #ffffff;
+  --text2:   rgba(255,255,255,0.68);
+  --text3:   rgba(255,255,255,0.36);
+  --text4:   rgba(255,255,255,0.18);
+  --accent:        #6366f1;
+  --green:         #4ade80;
+  --green-dim:     rgba(74,222,128,0.5);
+  --green-bg:      rgba(74,222,128,0.07);
+  --red:           #f87171;
+  --amber:         #fbbf24;
 }
 
-html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; -webkit-font-smoothing: antialiased; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; line-height: 1.65; font-variant-numeric: tabular-nums; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
 
 /* ─── PAGE ───────────────────────────────────────────────────────────────────── */
 .page { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
@@ -131,7 +131,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
 /* Section */
 .section-block { display: flex; flex-direction: column; }
-.section-title { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+.section-title { font-size: 11px; color: var(--text4); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
 
 /* Metrics */
 .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -156,7 +156,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
 /* Score */
 .radar-container { display: flex; flex-direction: column; align-items: center; padding: 16px 0 8px; }
-.overall-score { font-family: 'Syne', sans-serif; font-size: 56px; font-weight: 600; color: var(--accent); line-height: 1; letter-spacing: -0.03em; }
+.overall-score { font-family: 'Syne', sans-serif; font-size: 48px; font-weight: 500; color: var(--accent); line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 .overall-score-label { font-size: 12px; color: var(--text3); margin-top: 6px; margin-bottom: 24px; }
 
 .score-row { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 0.5px solid var(--border); }
