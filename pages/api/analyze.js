@@ -26,7 +26,7 @@ JSON structure: {"decision":"GO — reason","decisionClass":"v-go","dtc":"go-t",
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
         temperature: 0.3,
-        max_tokens: 4000,
+        max_tokens: 8000,
         messages: [
           { role: 'system', content: SYSTEM },
           { role: 'user', content: `Analyze this business idea. If it is short or vague, make specific assumptions and state them. Return only valid JSON. Business idea: "${idea.trim()}"` }
