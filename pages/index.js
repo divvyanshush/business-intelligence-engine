@@ -3,10 +3,22 @@ import { useRouter } from 'next/router';
 import RadarChart from '../components/RadarChart';
 
 const IDEA_POOL = [
-  'AI SaaS tool', 'D2C skincare brand', 'B2B data API', 'Micro-SaaS for creators',
-  'Newsletter business', 'Productized design service', 'AI hiring tool', 'No-code app builder',
-  'Marketplace for freelancers', 'EdTech for India', 'FinTech for SMBs', 'Health tracking app',
-  'AI legal assistant', 'Creator monetization tool', 'B2B cold outreach tool', 'E-commerce aggregator'
+  'A WhatsApp-based tax filing assistant for Indian freelancers and gig workers earning ₹3–15L/year',
+  'D2C skincare brand for Indian men in their 30s using ayurvedic ingredients, sold via Instagram and Blinkit',
+  'B2B API that gives e-commerce stores real-time competitor pricing data, charged per API call',
+  'Micro-SaaS for Notion creators to sell templates with built-in analytics and affiliate payouts',
+  'AI tool that rewrites job descriptions to reduce bias and improve female applicant rates, sold to HR teams',
+  'A subscription newsletter + community for independent financial advisors in India to share deal flow',
+  'Productized service that builds and manages Google Ads for D2C brands under ₹50L monthly spend',
+  'No-code tool that lets coaches and consultants build client portals with progress tracking and payments',
+  'Peer-to-peer marketplace for college students in India to rent textbooks, laptops, and study materials',
+  'Mobile app that turns a 10-minute daily voice note into a structured journal entry using AI',
+  'AI hiring tool that screens and ranks applicants for blue-collar jobs in logistics and manufacturing',
+  'Health tracking app for Indian women over 40 focused on perimenopause symptoms and lifestyle changes',
+  'AI legal assistant that drafts founder-friendly contracts and NDAs for early-stage Indian startups',
+  'Platform for YouTube creators to license their b-roll footage to brands and other creators',
+  'B2B cold outreach tool that researches prospects and writes personalized emails using LinkedIn data',
+  'Aggregator that compares and purchases bulk raw materials for small food and beverage manufacturers'
 ];
 
 const AGENTS = [
