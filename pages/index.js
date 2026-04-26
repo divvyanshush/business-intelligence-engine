@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
-import RadarChart from '../components/RadarChart';
 
 const IDEA_POOL = [
   'A WhatsApp-based tax filing assistant for Indian freelancers and gig workers earning ₹3–15L/year',
@@ -404,7 +403,6 @@ export default function Home() {
               <div className="score-hero-number">{overallScore ?? '—'}</div>
               <div className="score-hero-label">overall score / 100</div>
             </div>
-            <RadarChart scores={report?.scores} />
             <div className="section-block">
               {report?.scores && Object.entries(report.scores).map(([k, v]) => (
                 <div key={k} className="score-row">
