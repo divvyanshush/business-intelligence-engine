@@ -45,7 +45,6 @@ const TABS = ['Overview', 'Score', 'Market', 'Personas', 'Channels', 'Legal', 'B
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// ─── Shared report-to-markdown builder ───────────────────────────────────────
 function buildMarkdown(report, idea) {
   const lines = [];
   lines.push(`# Kira Analysis: ${idea}`);
@@ -130,24 +129,20 @@ function buildMarkdown(report, idea) {
 export default function Home() {
   const router = useRouter();
 
-  // phases: input | running | results | error
   const [phase, setPhase] = useState('input');
   const [idea, setIdea] = useState('');
   const [chips, setChips] = useState(IDEA_POOL.slice(0, 4));
-  const [spinning, setSpinning] = useState(false);
   const [versionOpen, setVersionOpen] = useState(false);
   const [version, setVersion] = useState('Kira 1.0');
-
-  const [agentStates, setAgentStates] = useState(AGENTS.map(() => 'pending')); // pending | running | done
+  const [agentStates, setAgentStates] = useState(AGENTS.map(() => 'pending'));
   const [kiraLine, setKiraLine] = useState('');
-
   const [report, setReport] = useState(null);
   const [activeTab, setActiveTab] = useState('Overview');
   const [error, setError] = useState('');
+  const [overallScore, setOverallScore] = useState(null);
 
   const textareaRef = useRef(null);
 
-  // Restore from URL share
   useEffect(() => {
     const { idea: qi, data: qd } = router.query;
     if (qi && qd) {
@@ -160,15 +155,6 @@ export default function Home() {
     }
   }, [router.query]);
 
-  // Shuffle chips
-  const shuffle = () => {
-    setSpinning(true);
-    setTimeout(() => setSpinning(false), 400);
-    const pool = [...IDEA_POOL].sort(() => Math.random() - 0.5).slice(0, 4);
-    setChips(pool);
-  };
-
-  // Submit
   const submit = async () => {
     if (!idea.trim()) return;
     setPhase('running');
@@ -189,6 +175,10 @@ export default function Home() {
       setError(data.error);
       setPhase('error');
     } else {
+      if (data.scores) {
+        const vals = Object.values(data.scores);
+        setOverallScore(Math.round(vals.reduce((a, b) => a + b, 0) / vals.length));
+      }
       setReport(data);
       setActiveTab('Overview');
       setPhase('results');
@@ -198,19 +188,15 @@ export default function Home() {
   const runAnimation = async () => {
     await sleep(600);
     setKiraLine(KIRA_LINES[0]);
-
     for (let i = 0; i < AGENTS.length; i++) {
       await sleep(i === 0 ? 400 : 320);
       setAgentStates((prev) => { const n = [...prev]; n[i] = 'running'; return n; });
-
       if (i === 2) { await sleep(80); setKiraLine(KIRA_LINES[1]); }
       if (i === 5) { await sleep(80); setKiraLine(KIRA_LINES[2]); }
       if (i === 7) { await sleep(80); setKiraLine(KIRA_LINES[3]); }
-
       await sleep(i < 3 ? 900 : i < 6 ? 1100 : 1300);
       setAgentStates((prev) => { const n = [...prev]; n[i] = 'done'; return n; });
     }
-
     await sleep(500);
     setKiraLine(KIRA_LINES[4]);
     await sleep(800);
@@ -220,13 +206,11 @@ export default function Home() {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
   };
 
-  // ─── FIXED: Full report copy ──────────────────────────────────────────────
   const copyReport = () => {
     if (!report) return;
     navigator.clipboard.writeText(buildMarkdown(report, idea));
   };
 
-  // ─── FIXED: Full 7-tab export ─────────────────────────────────────────────
   const exportMarkdown = () => {
     if (!report) return;
     const blob = new Blob([buildMarkdown(report, idea)], { type: 'text/markdown' });
@@ -252,9 +236,10 @@ export default function Home() {
     setIdea('');
     setReport(null);
     setError('');
+    setOverallScore(null);
   };
 
-  // ─── INPUT SCREEN ────────────────────────────────────────────────────────────
+  // ─── INPUT SCREEN ─────────────────────────────────────────────────────────────
   if (phase === 'input') return (
     <div className="page">
       <div className="home-center">
@@ -295,24 +280,17 @@ export default function Home() {
               </div>
             </div>
             <button className="send-btn" onClick={submit}>
-              <span className="send-arrow" />
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0c0c0c" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5" />
+                <polyline points="5 12 12 5 19 12" />
+              </svg>
             </button>
           </div>
         </div>
         <div className="chips-row">
-          <div className="chips">
-            {chips.map((c) => (
-              <button key={c} className="chip" onClick={() => setIdea(c)}>{c}</button>
-            ))}
-          </div>
-          <button className={`shuffle-btn ${spinning ? 'spinning' : ''}`} onClick={shuffle} title="Shuffle ideas">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="16 3 21 3 21 8" />
-              <line x1="4" y1="20" x2="21" y2="3" />
-              <polyline points="21 16 21 21 16 21" />
-              <line x1="15" y1="15" x2="21" y2="21" />
-            </svg>
-          </button>
+          {chips.map((c) => (
+            <button key={c} className="chip" onClick={() => setIdea(c)}>{c}</button>
+          ))}
         </div>
       </div>
     </div>
@@ -378,17 +356,14 @@ export default function Home() {
       </div>
 
       <div className="results-body">
-        {/* VERDICT */}
         <div className={`verdict-card ${dc}`}>
           <span className="verdict-badge">{report?.decision}</span>
           <p className="verdict-reason">{report?.decisionReason}</p>
-          {/* FIXED: Show pivotAngle when present */}
           {report?.pivotAngle && (
             <p className="verdict-pivot">↗ If you pivoted: {report.pivotAngle}</p>
           )}
         </div>
 
-        {/* OVERVIEW TAB */}
         {activeTab === 'Overview' && (
           <div className="tab-content">
             <div className="metrics-grid">
@@ -423,15 +398,18 @@ export default function Home() {
           </div>
         )}
 
-        {/* SCORE TAB */}
         {activeTab === 'Score' && (
           <div className="tab-content">
+            <div className="score-hero">
+              <div className="score-hero-number">{overallScore ?? '—'}</div>
+              <div className="score-hero-label">overall score / 100</div>
+            </div>
             <RadarChart scores={report?.scores} />
             <div className="section-block">
               {report?.scores && Object.entries(report.scores).map(([k, v]) => (
                 <div key={k} className="score-row">
                   <span className="score-label">{k.replace(/([A-Z])/g, ' $1').toLowerCase()}</span>
-                  <div className="score-bar-wrap"><div className="score-bar" style={{ width: `${v * 10}%` }} /></div>
+                  <div className="score-bar-wrap"><div className="score-bar" style={{ width: `${v}%` }} /></div>
                   <span className="score-val">{v}</span>
                 </div>
               ))}
@@ -439,7 +417,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* MARKET TAB */}
         {activeTab === 'Market' && (
           <div className="tab-content">
             <div className="section-title">Competitor landscape</div>
@@ -447,7 +424,7 @@ export default function Home() {
               <div key={c.name} className="competitor-card">
                 <div className="comp-header">
                   <span className="comp-name">{c.name}</span>
-                  <span className="comp-share">{c.share}</span>
+                  <span className="comp-share">{c.share}% share</span>
                 </div>
                 <div className="comp-weakness">Weakness: {c.weakness}</div>
                 <div className="comp-threat">Threat level: {c.threat}</div>
@@ -456,7 +433,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* PERSONAS TAB */}
         {activeTab === 'Personas' && (
           <div className="tab-content">
             {report?.personas?.map((p) => (
@@ -474,7 +450,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* CHANNELS TAB */}
         {activeTab === 'Channels' && (
           <div className="tab-content">
             <div className="section-title">Acquisition channels</div>
@@ -491,7 +466,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* LEGAL TAB */}
         {activeTab === 'Legal' && (
           <div className="tab-content">
             <div className="section-block">
@@ -512,7 +486,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* BLUEPRINT TAB */}
         {activeTab === 'Blueprint' && (
           <div className="tab-content">
             {report?.spec && (
@@ -545,6 +518,3 @@ export default function Home() {
     </div>
   );
 }
-// tick fix
-
-// kira-v1.0-stable
