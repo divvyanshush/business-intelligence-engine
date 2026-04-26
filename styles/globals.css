@@ -54,8 +54,14 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
 /* ─── CHIPS — Perplexity style ─── */
 .chips-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; width: 100%; }
-.chip { background: transparent; border: 0.5px solid var(--border2); outline: none; border-radius: 20px; padding: 6px 14px; font-size: 12px; color: var(--text3); cursor: pointer; white-space: nowrap; font-family: 'DM Sans', sans-serif; transition: color 0.15s, border-color 0.15s, background 0.15s; line-height: 1.4; }
+.chip { background: transparent; border: 0.5px solid var(--border2); outline: none; border-radius: 20px; padding: 6px 14px; font-size: 12px; color: var(--text3); cursor: pointer; white-space: nowrap; font-family: 'DM Sans', sans-serif; transition: color 0.15s, border-color 0.15s, background 0.15s; line-height: 1.4; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
 .chip:hover { color: var(--text2); border-color: rgba(255,255,255,0.32); background: rgba(255,255,255,0.04); }
+
+@media (max-width: 600px) {
+  .chips-row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
+  .chips-row::-webkit-scrollbar { display: none; }
+  .chip { max-width: 200px; flex-shrink: 0; }
+}
 
 /* ─── RUNNING ─── */
 .running-body { width: 100%; max-width: 480px; padding: 0 24px; }
